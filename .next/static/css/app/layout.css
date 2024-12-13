@@ -8150,6 +8150,11 @@ body {
   background-color: hsl(var(--nextui-content2) / var(--nextui-content2-opacity, var(--tw-bg-opacity)));
 }
 
+.dark\:hover\:bg-gray-800:hover:is(.dark *) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
+}
+
 .dark\:focus\:bg-danger-400\/20:focus:is(.dark *) {
   background-color: hsl(var(--nextui-danger-400) / 0.2);
 }
