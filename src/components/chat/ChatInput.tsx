@@ -1,47 +1,81 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { PlusIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+
 interface ChatInputProps {
-  onSend: (message: string) => void;
-  disabled?: boolean;
-  placeholder?: string;
+  onSendMessage: (message: string) => void;
+  onFileUpload: (files: FileList) => void;
+  isLoading?: boolean;
 }
 
-export function ChatInput({ onSend, disabled, placeholder = "Ask a question..." }: ChatInputProps) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+export function ChatInput({ onSendMessage, onFileUpload, isLoading }: ChatInputProps) {
+  const [message, setMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.currentTarget;
-    const input = form.elements.namedItem('message') as HTMLInputElement;
-    if (input.value.trim()) {
-      onSend(input.value);
-      input.value = '';
+    if (message.trim()) {
+      onSendMessage(message);
+      setMessage('');
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onFileUpload(e.target.files);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handlePlusClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <div className="relative flex-1">
-        <input
-          type="text"
-          name="message"
-          placeholder={placeholder}
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 pl-4 pr-10 py-2"
-          disabled={disabled}
+    <form onSubmit={handleSubmit} className="flex items-end gap-2 p-4 border-t">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        className="hidden"
+        multiple
+      />
+      <button
+        type="button"
+        onClick={handlePlusClick}
+        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+      >
+        <PlusIcon className="h-5 w-5" />
+      </button>
+      <div className="flex-1 relative">
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Ask me anything about your data..."
+          className="w-full p-3 pr-10 rounded-lg border focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+          rows={1}
+          style={{ minHeight: '44px', maxHeight: '200px' }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
         />
-        <button
-          type="button"
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 4V20M20 12H4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
       </div>
       <button
         type="submit"
-        disabled={disabled}
-        className="rounded-full p-2 hover:bg-purple-100"
+        disabled={isLoading || !message.trim()}
+        className={`p-2 rounded-lg ${
+          isLoading || !message.trim()
+            ? 'text-gray-400 bg-gray-100'
+            : 'text-white bg-purple-600 hover:bg-purple-700'
+        }`}
       >
-        <svg className="w-6 h-6 text-purple-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>
-        </svg>
+        <PaperAirplaneIcon className="h-5 w-5" />
       </button>
     </form>
   );

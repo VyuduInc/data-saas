@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -7,14 +9,21 @@ interface SettingsProps {
   onClose: () => void;
 }
 
-export default function Settings({ isOpen, onClose }: SettingsProps) {
+export function Settings({ isOpen, onClose }: SettingsProps) {
   const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState({
     theme: 'light',
     model: 'GPT-4o',
     runtime: 'Python',
     alwaysShowCode: false,
+    context: '',
+    responseStyle: '',
   });
+
+  const handleSave = () => {
+    // Save settings logic here
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
@@ -33,10 +42,10 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
           </div>
 
           <div className="bg-purple-100 rounded-md p-3 mb-4">
-            <button className="flex items-center space-x-2 text-purple-700 font-medium">
+            <div className="flex items-center space-x-2 text-purple-700 font-medium">
               <span className="text-sm">⚡</span>
               <span>Upgrade</span>
-            </button>
+            </div>
             <p className="text-sm text-purple-700 mt-1">Upgrade now to unlock all settings</p>
           </div>
 
@@ -73,8 +82,13 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
                     <h3 className="text-sm font-medium mb-1">Appearance</h3>
                     <p className="text-sm text-gray-500">Choose your preferred theme</p>
                     <div className="mt-2 flex justify-end">
-                      <button className="p-2 rounded-full bg-gray-100">
-                        🌙
+                      <button 
+                        className={`p-2 rounded-full ${
+                          settings.theme === 'dark' ? 'bg-purple-100' : 'bg-gray-100'
+                        }`}
+                        onClick={() => setSettings(s => ({ ...s, theme: s.theme === 'light' ? 'dark' : 'light' }))}
+                      >
+                        {settings.theme === 'light' ? '🌙' : '☀️'}
                       </button>
                     </div>
                   </div>
@@ -112,16 +126,14 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
                     <p className="text-sm text-gray-500">Show code blocks by default in responses</p>
                     <div className="mt-2 flex justify-end">
                       <button
-                        className={`w-12 h-6 rounded-full transition-colors ${
+                        onClick={() => setSettings(s => ({ ...s, alwaysShowCode: !s.alwaysShowCode }))}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                           settings.alwaysShowCode ? 'bg-purple-600' : 'bg-gray-200'
                         }`}
-                        onClick={() =>
-                          setSettings(s => ({ ...s, alwaysShowCode: !s.alwaysShowCode }))
-                        }
                       >
-                        <div
-                          className={`w-4 h-4 rounded-full bg-white transform transition-transform ${
-                            settings.alwaysShowCode ? 'translate-x-7' : 'translate-x-1'
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            settings.alwaysShowCode ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>
@@ -136,11 +148,16 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
                     <h3 className="text-sm font-medium mb-1">Context</h3>
                     <p className="text-sm text-gray-500">What would you like Vizly to know?</p>
                     <textarea
+                      value={settings.context}
+                      onChange={(e) => setSettings(s => ({ ...s, context: e.target.value }))}
                       className="mt-2 w-full p-2 border rounded-md"
                       placeholder="Include instructions you would like Vizly to remember throughout your conversations."
                       rows={4}
+                      maxLength={1000}
                     />
-                    <div className="text-right text-xs text-gray-500 mt-1">0/1000</div>
+                    <div className="text-right text-xs text-gray-500 mt-1">
+                      {settings.context.length}/1000
+                    </div>
                   </div>
 
                   <div>
@@ -148,14 +165,22 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
                     <p className="text-sm text-gray-500">How would you like Vizly to respond?</p>
                     <input
                       type="text"
+                      value={settings.responseStyle}
+                      onChange={(e) => setSettings(s => ({ ...s, responseStyle: e.target.value }))}
                       className="mt-2 w-full p-2 border rounded-md"
                       placeholder="e.g. professional, friendly, succinct, French"
+                      maxLength={50}
                     />
-                    <div className="text-right text-xs text-gray-500 mt-1">0/50</div>
+                    <div className="text-right text-xs text-gray-500 mt-1">
+                      {settings.responseStyle.length}/50
+                    </div>
                   </div>
 
                   <div className="flex justify-end">
-                    <button className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md">
+                    <button 
+                      onClick={handleSave}
+                      className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200"
+                    >
                       Save changes
                     </button>
                   </div>

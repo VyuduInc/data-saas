@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   PlusIcon, 
@@ -9,13 +9,15 @@ import {
   UserGroupIcon,
   Cog6ToothIcon,
   ChatBubbleLeftIcon,
-  CircleStackIcon
+  CircleStackIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 
 interface Chat {
   id: number;
   name: string;
   timestamp: Date;
+  isEditing?: boolean;
 }
 
 export function Sidebar() {
@@ -28,14 +30,41 @@ export function Sidebar() {
     { id: 6, name: "Overview of Black-Owned Skinc", timestamp: new Date() },
   ]);
   const [isChatsExpanded, setIsChatsExpanded] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingId]);
 
   const createNewChat = () => {
     const newChat = {
-      id: chats.length + 1,
+      id: Date.now(),
       name: "New Chat",
       timestamp: new Date(),
+      isEditing: true,
     };
     setChats([newChat, ...chats]);
+    setEditingId(newChat.id);
+  };
+
+  const startEditing = (chatId: number) => {
+    setEditingId(chatId);
+  };
+
+  const handleNameChange = (chatId: number, newName: string) => {
+    setChats(chats.map(chat => 
+      chat.id === chatId ? { ...chat, name: newName } : chat
+    ));
+  };
+
+  const finishEditing = (e?: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e && e.key !== 'Enter') {
+      return;
+    }
+    setEditingId(null);
   };
 
   return (
@@ -75,13 +104,36 @@ export function Sidebar() {
             <div className="space-y-1">
               <div className="px-2 py-1 text-xs text-gray-500">Older</div>
               {chats.map((chat) => (
-                <a
+                <div
                   key={chat.id}
-                  href="#"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-200"
+                  className="group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-200"
                 >
-                  {chat.name}
-                </a>
+                  {editingId === chat.id ? (
+                    <input
+                      ref={editInputRef}
+                      type="text"
+                      value={chat.name}
+                      onChange={(e) => handleNameChange(chat.id, e.target.value)}
+                      onKeyDown={(e) => finishEditing(e)}
+                      onBlur={() => finishEditing()}
+                      className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm"
+                      autoFocus
+                    />
+                  ) : (
+                    <>
+                      <span className="flex-1">{chat.name}</span>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          startEditing(chat.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-300 rounded"
+                      >
+                        <PencilIcon className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
           </nav>
