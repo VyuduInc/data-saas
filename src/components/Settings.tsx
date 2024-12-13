@@ -28,7 +28,7 @@ interface SettingsProps {
 export function Settings({ isOpen, onClose }: SettingsProps) {
   const [settings, setSettings] = useState({
     theme: 'light',
-    model: 'GPT-4o',
+    model: 'GPT-4',
     runtime: 'Python',
     alwaysShowCode: false,
     context: '',
@@ -97,8 +97,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     className="mt-2"
                     size="sm"
                     variant="bordered"
+                    onChange={(e) => setSettings(s => ({ ...s, model: e.target.value }))}
                   >
-                    <SelectItem key="GPT-4o" startContent="🤖">GPT-4o</SelectItem>
+                    <SelectItem key="GPT-4" startContent="🤖">GPT-4</SelectItem>
                     <SelectItem key="GPT-3.5" startContent="🤖">GPT-3.5</SelectItem>
                   </Select>
                 </div>
@@ -140,11 +141,11 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               <div className="space-y-6 py-4">
                 <div>
                   <h3 className="text-sm font-medium mb-1">Context</h3>
-                  <p className="text-sm text-gray-500">What would you like Vizly to know?</p>
+                  <p className="text-sm text-gray-500">What would you like Vaydr to know?</p>
                   <Textarea
                     value={settings.context}
                     onChange={(e) => setSettings(s => ({ ...s, context: e.target.value }))}
-                    placeholder="Include instructions you would like Vizly to remember throughout your conversations."
+                    placeholder="Include instructions you would like Vaydr to remember throughout your conversations."
                     className="mt-2"
                     maxRows={4}
                     maxLength={1000}
@@ -156,7 +157,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
 
                 <div>
                   <h3 className="text-sm font-medium mb-1">Response style</h3>
-                  <p className="text-sm text-gray-500">How would you like Vizly to respond?</p>
+                  <p className="text-sm text-gray-500">How would you like Vaydr to respond?</p>
                   <Input
                     value={settings.responseStyle}
                     onChange={(e) => setSettings(s => ({ ...s, responseStyle: e.target.value }))}

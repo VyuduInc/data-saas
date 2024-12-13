@@ -3,7 +3,7 @@ import { LockClosedIcon, ShieldCheckIcon, NoSymbolIcon } from '@heroicons/react/
 const features = [
   {
     name: 'Encrypted at rest and in transit',
-    description: 'All data uploaded to Vizly is encrypted in transit and at rest',
+    description: 'All data uploaded to Vaydr is encrypted in transit and at rest',
     icon: LockClosedIcon,
   },
   {
@@ -27,7 +27,7 @@ export function Security() {
             Private and secure
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            All data uploaded to Vizly is encrypted in transit and at rest. Any data uploaded to Vizly is stored in a completely isolated environment only accessible to you and is deleted permanently after use.
+            All data uploaded to Vaydr is encrypted in transit and at rest. Any data uploaded to Vaydr is stored in a completely isolated environment only accessible to you and is deleted permanently after use.
           </p>
         </div>
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">

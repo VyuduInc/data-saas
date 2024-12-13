@@ -1,18 +1,18 @@
 const faqs = [
   {
-    question: 'Is Vizly free to use?',
+    question: 'Is Vaydr free to use?',
     answer: 'Yes! All users can use up to 10 messages a month for free. After reaching the limit, you can upgrade your plan to get unlimited queries and more features.',
   },
   {
     question: 'How do I get started?',
-    answer: 'Sign up to Vizly and immediately start asking questions and creating visualizations with your data. For more information, check out our documentation.',
+    answer: 'Sign up to Vaydr and immediately start asking questions and creating visualizations with your data. For more information, check out our documentation.',
   },
   {
     question: 'What data sources are supported?',
-    answer: 'We currently support CSV, JSON, and Excel files. If you want Vizly to specialize in analyzing data from other sources, reach out to us.',
+    answer: 'We currently support CSV, JSON, and Excel files. If you want Vaydr to specialize in analyzing data from other sources, reach out to us.',
   },
   {
-    question: 'Does Vizly have a student discount?',
+    question: 'Does Vaydr have a student discount?',
     answer: 'Yes! We offer a 50% discount to all students and academics. Sign up with your academic email to have the discount automatically applied or email us.',
   },
 ];

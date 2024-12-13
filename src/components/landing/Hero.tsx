@@ -16,7 +16,7 @@ export function Hero() {
               href="/chat"
               className="rounded-md bg-purple-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-purple-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
             >
-              Launch Vizly
+              Launch Vaydr
             </Link>
           </div>
           <div className="mt-8 flex justify-center space-x-2">

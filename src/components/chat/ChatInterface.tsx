@@ -73,7 +73,7 @@ export function ChatInterface() {
     <div className="flex h-full flex-col bg-white">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
-        <h1 className="text-xl font-semibold">Vizly</h1>
+        <h1 className="text-xl font-semibold">Vaydr</h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1">

@@ -30,7 +30,7 @@ export function HowItWorks() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">How it works</h2>
           <p className="mt-4 text-lg text-gray-600">
-            Vizly helps you get the most out of your data with AI to automatically insights in seconds, whether you're a student, researcher, or business.
+            Vaydr helps you get the most out of your data with AI to automatically insights in seconds, whether you're a student, researcher, or business.
           </p>
         </div>
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
