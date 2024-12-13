@@ -2,7 +2,7 @@
 
 A powerful data visualization and analysis platform built with modern web technologies.
 
-[Edit in StackBlitz next generation editor ⚡️](https://stackblitz.com/~/github.com/VyuduInc/data-saas)
+
 
 ## User Stories
 
