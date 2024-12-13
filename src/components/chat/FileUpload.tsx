@@ -1,17 +1,51 @@
 import { useDropzone } from 'react-dropzone';
 import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
 
 interface FileUploadProps {
   onAnalyzing: (analyzing: boolean) => void;
 }
 
 export function FileUpload({ onAnalyzing }: FileUploadProps) {
+  const [error, setError] = useState<string | null>(null);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: async (files) => {
-      if (files.length > 0) {
-        onAnalyzing(true);
-        // Handle file upload and analysis
-        onAnalyzing(false);
+    accept: {
+      'text/csv': ['.csv'],
+      'application/json': ['.json'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+    onDrop: async (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        try {
+          setError(null);
+          onAnalyzing(true);
+          
+          const file = acceptedFiles[0];
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('fileType', file.name.split('.').pop() as string);
+
+          const response = await fetch('/api/analyze', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to analyze file');
+          }
+
+          const data = await response.json();
+          // Handle successful analysis
+          console.log('Analysis complete:', data);
+        } catch (err) {
+          console.error('File upload error:', err);
+          setError(err instanceof Error ? err.message : 'Failed to analyze file');
+        } finally {
+          onAnalyzing(false);
+        }
       }
     },
   });
@@ -39,6 +73,11 @@ export function FileUpload({ onAnalyzing }: FileUploadProps) {
           </p>
         </div>
       </div>
+      {error && (
+        <div className="mt-4 text-sm text-red-600">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
