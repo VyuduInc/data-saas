@@ -72,6 +72,13 @@ A powerful data visualization and analysis platform built with modern web techno
   - Input validation
   - XSS prevention
 
+## Documentation
+
+For detailed documentation, please refer to:
+- [Setup Guide](docs/SETUP.md) - Complete setup and configuration instructions
+- [API Documentation](docs/API.md) - API endpoints and usage
+- [Component Documentation](docs/COMPONENTS.md) - React component documentation and best practices
+
 ## Features
 
 ### Data Visualization
@@ -113,6 +120,49 @@ A powerful data visualization and analysis platform built with modern web techno
 - Shareable chart links
 - Collaborative viewing
 - Real-time updates
+
+### User Profile Management
+- Edit profile information (name, email)
+- Upload profile pictures (stored in S3)
+- Change password with security verification
+- Real-time validation and error handling
+
+### Chat Management
+- Create and manage chat conversations
+- Delete unwanted chat threads
+- Persistent chat history
+
+### Settings
+- Customize application preferences
+- Manage notification settings
+- Configure theme and display options
+
+## Configuration
+
+The application requires several environment variables to be set. Create a `.env.local` file with the following:
+
+```env
+# Database
+DATABASE_URL=
+
+# NextAuth
+NEXTAUTH_URL=
+NEXTAUTH_SECRET=
+
+# AWS S3
+AWS_REGION=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=
+
+# Optional: OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+```
+
+See the [Setup Guide](docs/SETUP.md) for detailed configuration instructions.
 
 ## Getting Started
 
