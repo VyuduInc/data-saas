@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Button, Textarea } from "@nextui-org/react";
 import { PlusIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 
 interface ChatInputProps {
@@ -43,21 +44,25 @@ export function ChatInput({ onSendMessage, onFileUpload, isLoading }: ChatInputP
         className="hidden"
         multiple
       />
-      <button
-        type="button"
+      <Button
+        isIconOnly
+        variant="light"
         onClick={handlePlusClick}
-        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+        type="button"
       >
         <PlusIcon className="h-5 w-5" />
-      </button>
-      <div className="flex-1 relative">
-        <textarea
+      </Button>
+      <div className="flex-1">
+        <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Ask me anything about your data..."
-          className="w-full p-3 pr-10 rounded-lg border focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-          rows={1}
-          style={{ minHeight: '44px', maxHeight: '200px' }}
+          minRows={1}
+          maxRows={4}
+          classNames={{
+            input: "resize-none",
+            inputWrapper: "!h-auto min-h-[44px]"
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -66,17 +71,15 @@ export function ChatInput({ onSendMessage, onFileUpload, isLoading }: ChatInputP
           }}
         />
       </div>
-      <button
+      <Button
+        isIconOnly
+        color="secondary"
         type="submit"
-        disabled={isLoading || !message.trim()}
-        className={`p-2 rounded-lg ${
-          isLoading || !message.trim()
-            ? 'text-gray-400 bg-gray-100'
-            : 'text-white bg-purple-600 hover:bg-purple-700'
-        }`}
+        isDisabled={isLoading || !message.trim()}
+        isLoading={isLoading}
       >
         <PaperAirplaneIcon className="h-5 w-5" />
-      </button>
+      </Button>
     </form>
   );
 }
