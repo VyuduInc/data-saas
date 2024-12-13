@@ -35,7 +35,11 @@ export type ChartType =
   | 'polar'
   | 'polar-bar'
   | 'treemap'
-  | 'sankey';
+  | 'sankey'
+  | 'bubble'
+  | 'radar'
+  | 'parallel'
+  | 'sunburst';
 
 export interface ChartConfig {
   type: ChartType;
@@ -51,7 +55,23 @@ export interface ChartConfig {
     markerSize?: number;
     lineWidth?: number;
     fillOpacity?: number;
+    theme?: string;
+    aggregationType?: AggregationType;
+    sortDirection?: SortDirection;
+    limit?: number;
   };
+}
+
+export interface ChartAnnotation {
+  type: 'text' | 'line' | 'rect' | 'circle';
+  x?: number;
+  y?: number;
+  text?: string;
+  color?: string;
+  borderColor?: string;
+  backgroundColor?: string;
+  fontSize?: number;
+  opacity?: number;
 }
 
 export interface AnalysisSummary {
@@ -66,3 +86,9 @@ export interface AnalysisResult {
 }
 
 export type FileType = 'csv' | 'json' | 'xlsx';
+
+// Note: AggregationType and SortDirection types are not defined in the provided code edit.
+// Please define these types as per your requirements.
+// For example:
+export type AggregationType = 'sum' | 'average' | 'max' | 'min';
+export type SortDirection = 'asc' | 'desc';

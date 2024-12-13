@@ -1,6 +1,16 @@
 import { useState } from 'react';
-import { Dialog } from '@headlessui/react';
+import { Dialog, Tab } from '@headlessui/react';
 import { ChartConfig } from '@/lib/types';
+import { chartThemes } from '@/lib/chartThemes';
+import { transformData, AggregationType, SortDirection } from '@/lib/dataTransforms';
+import { exportChart, exportData, shareChart } from '@/lib/export';
+import {
+  ChartBarIcon,
+  PaintBrushIcon,
+  AdjustmentsHorizontalIcon,
+  ArrowDownTrayIcon,
+  ShareIcon,
+} from '@heroicons/react/24/outline';
 
 const CHART_TYPES = {
   Simple: [
@@ -36,6 +46,12 @@ const CHART_TYPES = {
     { id: 'treemap', name: 'Treemap', icon: '▦' },
     { id: 'sankey', name: 'Sankey', icon: '⇢' },
   ],
+  Advanced: [
+    { id: 'bubble', name: 'Bubble', icon: '⚪' },
+    { id: 'radar', name: 'Radar', icon: '🕸️' },
+    { id: 'parallel', name: 'Parallel Coordinates', icon: '∥' },
+    { id: 'sunburst', name: 'Sunburst', icon: '☀️' },
+  ],
 };
 
 interface ChartEditorProps {
@@ -43,11 +59,57 @@ interface ChartEditorProps {
   onClose: () => void;
   config: ChartConfig;
   onConfigChange: (config: ChartConfig) => void;
+  data: any[];
+  plotRef: any;
 }
 
-export function ChartEditor({ isOpen, onClose, config, onConfigChange }: ChartEditorProps) {
-  const [selectedCategory, setSelectedCategory] = useState('Simple');
+export function ChartEditor({ 
+  isOpen, 
+  onClose, 
+  config, 
+  onConfigChange,
+  data,
+  plotRef 
+}: ChartEditorProps) {
   const [currentConfig, setCurrentConfig] = useState(config);
+  const [selectedCategory, setSelectedCategory] = useState('Simple');
+  const [aggregationType, setAggregationType] = useState<AggregationType>('sum');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [selectedTheme, setSelectedTheme] = useState('default');
+  const [limit, setLimit] = useState(1000);
+  const [annotations, setAnnotations] = useState<any[]>([]);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [selectedDataColumns, setSelectedDataColumns] = useState<string[]>([]);
+
+  const handleDataTransform = () => {
+    const transformedData = transformData(data, {
+      aggregation: {
+        type: aggregationType,
+      },
+      sort: {
+        field: 'value',
+        direction: sortDirection,
+      },
+      limit,
+    });
+
+    const newConfig = { ...currentConfig, data: transformedData };
+    setCurrentConfig(newConfig);
+    onConfigChange(newConfig);
+  };
+
+  const handleThemeChange = (theme: string) => {
+    setSelectedTheme(theme);
+    const newConfig = {
+      ...currentConfig,
+      options: {
+        ...currentConfig.options,
+        ...chartThemes[theme as keyof typeof chartThemes],
+      },
+    };
+    setCurrentConfig(newConfig);
+    onConfigChange(newConfig);
+  };
 
   const handleTypeChange = (type: string) => {
     const newConfig = { ...currentConfig, type };
@@ -67,91 +129,328 @@ export function ChartEditor({ isOpen, onClose, config, onConfigChange }: ChartEd
             </Dialog.Title>
           </div>
 
-          <div className="p-6">
-            {/* Chart Type Selection */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium mb-2">Chart Type</h3>
-              <div className="flex space-x-4 mb-4">
-                {Object.keys(CHART_TYPES).map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-md text-sm ${
-                      selectedCategory === category
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-4 gap-4">
-                {CHART_TYPES[selectedCategory as keyof typeof CHART_TYPES].map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => handleTypeChange(type.id)}
-                    className={`p-4 rounded-lg border ${
-                      currentConfig.type === type.id
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-200'
-                    } text-center`}
-                  >
-                    <div className="text-2xl mb-2">{type.icon}</div>
-                    <div className="text-sm">{type.name}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Chart Configuration */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <input
-                  type="text"
-                  value={currentConfig.title}
-                  onChange={(e) => {
-                    const newConfig = { ...currentConfig, title: e.target.value };
-                    setCurrentConfig(newConfig);
-                    onConfigChange(newConfig);
-                  }}
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">X Axis Title</label>
-                  <input
-                    type="text"
-                    value={currentConfig.xAxis}
-                    onChange={(e) => {
-                      const newConfig = { ...currentConfig, xAxis: e.target.value };
-                      setCurrentConfig(newConfig);
-                      onConfigChange(newConfig);
-                    }}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                  />
+          <Tab.Group>
+            <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+              <Tab className="tab-button">
+                <ChartBarIcon className="h-5 w-5" />
+                <span>Chart Type</span>
+              </Tab>
+              <Tab className="tab-button">
+                <PaintBrushIcon className="h-5 w-5" />
+                <span>Style</span>
+              </Tab>
+              <Tab className="tab-button">
+                <AdjustmentsHorizontalIcon className="h-5 w-5" />
+                <span>Data</span>
+              </Tab>
+              <Tab className="tab-button">
+                <ArrowDownTrayIcon className="h-5 w-5" />
+                <span>Export</span>
+              </Tab>
+              <Tab className="tab-button">
+                <ShareIcon className="h-5 w-5" />
+                <span>Share</span>
+              </Tab>
+            </Tab.List>
+            <Tab.Panels className="mt-4">
+              {/* Chart Type Panel */}
+              <Tab.Panel>
+                <div className="space-y-4">
+                  {Object.entries(CHART_TYPES).map(([category, types]) => (
+                    <div key={category}>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">{category}</h3>
+                      <div className="grid grid-cols-4 gap-2">
+                        {types.map((type) => (
+                          <button
+                            key={type.id}
+                            className={`flex items-center justify-center p-3 rounded-lg border ${
+                              config.type === type.id
+                                ? 'border-indigo-500 bg-indigo-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => onConfigChange({ ...config, type: type.id as ChartType })}
+                          >
+                            <span className="text-xl mr-2">{type.icon}</span>
+                            <span className="text-sm">{type.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              </Tab.Panel>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Y Axis Title</label>
-                  <input
-                    type="text"
-                    value={currentConfig.yAxis}
-                    onChange={(e) => {
-                      const newConfig = { ...currentConfig, yAxis: e.target.value };
-                      setCurrentConfig(newConfig);
-                      onConfigChange(newConfig);
-                    }}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                  />
+              {/* Style Panel */}
+              <Tab.Panel>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Theme</label>
+                    <select
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      value={config.options?.theme || 'default'}
+                      onChange={(e) =>
+                        onConfigChange({
+                          ...config,
+                          options: { ...config.options, theme: e.target.value },
+                        })
+                      }
+                    >
+                      {Object.keys(chartThemes).map((theme) => (
+                        <option key={theme} value={theme}>
+                          {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Title</label>
+                    <input
+                      type="text"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      value={config.title}
+                      onChange={(e) => onConfigChange({ ...config, title: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">X Axis Label</label>
+                      <input
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        value={config.xAxis || ''}
+                        onChange={(e) => onConfigChange({ ...config, xAxis: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Y Axis Label</label>
+                      <input
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        value={config.yAxis || ''}
+                        onChange={(e) => onConfigChange({ ...config, yAxis: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <button
+                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    >
+                      {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+                    </button>
+
+                    {showAdvancedOptions && (
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Orientation</label>
+                          <select
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            value={config.options?.orientation || 'vertical'}
+                            onChange={(e) =>
+                              onConfigChange({
+                                ...config,
+                                options: { ...config.options, orientation: e.target.value as 'vertical' | 'horizontal' },
+                              })
+                            }
+                          >
+                            <option value="vertical">Vertical</option>
+                            <option value="horizontal">Horizontal</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Legend</label>
+                          <div className="mt-1">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                              checked={config.options?.showLegend || false}
+                              onChange={(e) =>
+                                onConfigChange({
+                                  ...config,
+                                  options: { ...config.options, showLegend: e.target.checked },
+                                })
+                              }
+                            />
+                            <span className="ml-2">Show Legend</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Marker Size</label>
+                          <input
+                            type="range"
+                            min="1"
+                            max="20"
+                            className="mt-1 block w-full"
+                            value={config.options?.markerSize || 6}
+                            onChange={(e) =>
+                              onConfigChange({
+                                ...config,
+                                options: { ...config.options, markerSize: parseInt(e.target.value) },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
+              </Tab.Panel>
+
+              {/* Data Panel */}
+              <Tab.Panel>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Data Columns</label>
+                    <div className="mt-2 space-y-2">
+                      {Object.keys(data[0] || {}).map((column) => (
+                        <div key={column} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            checked={selectedDataColumns.includes(column)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedDataColumns([...selectedDataColumns, column]);
+                              } else {
+                                setSelectedDataColumns(selectedDataColumns.filter((col) => col !== column));
+                              }
+                            }}
+                          />
+                          <span className="ml-2">{column}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Data Transformations</label>
+                    <div className="mt-2 space-y-4">
+                      <div>
+                        <select
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          value={config.options?.aggregationType || ''}
+                          onChange={(e) =>
+                            onConfigChange({
+                              ...config,
+                              options: { ...config.options, aggregationType: e.target.value as AggregationType },
+                            })
+                          }
+                        >
+                          <option value="">No Aggregation</option>
+                          <option value="sum">Sum</option>
+                          <option value="average">Average</option>
+                          <option value="min">Minimum</option>
+                          <option value="max">Maximum</option>
+                          <option value="count">Count</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <select
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          value={config.options?.sortDirection || ''}
+                          onChange={(e) =>
+                            onConfigChange({
+                              ...config,
+                              options: { ...config.options, sortDirection: e.target.value as SortDirection },
+                            })
+                          }
+                        >
+                          <option value="">No Sorting</option>
+                          <option value="asc">Ascending</option>
+                          <option value="desc">Descending</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Limit Data Points</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          value={config.options?.limit || ''}
+                          onChange={(e) =>
+                            onConfigChange({
+                              ...config,
+                              options: { ...config.options, limit: parseInt(e.target.value) || undefined },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Tab.Panel>
+
+              {/* Export Panel */}
+              <Tab.Panel>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Export Chart</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        className="export-button"
+                        onClick={() => exportChart('png', plotRef.current)}
+                      >
+                        Export as PNG
+                      </button>
+                      <button
+                        className="export-button"
+                        onClick={() => exportChart('svg', plotRef.current)}
+                      >
+                        Export as SVG
+                      </button>
+                      <button
+                        className="export-button"
+                        onClick={() => exportChart('pdf', plotRef.current)}
+                      >
+                        Export as PDF
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Export Data</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        className="export-button"
+                        onClick={() => exportData(data, 'csv')}
+                      >
+                        Export as CSV
+                      </button>
+                      <button
+                        className="export-button"
+                        onClick={() => exportData(data, 'xlsx')}
+                      >
+                        Export as Excel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Tab.Panel>
+
+              {/* Share Panel */}
+              <Tab.Panel>
+                <div className="space-y-4">
+                  <button
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    onClick={() => {
+                      shareChart(config);
+                      // Show a toast notification
+                      alert('Share link copied to clipboard!');
+                    }}
+                  >
+                    Copy Share Link
+                  </button>
+                </div>
+              </Tab.Panel>
+            </Tab.Panels>
+          </Tab.Group>
 
           <div className="border-t border-gray-200 px-6 py-4 flex justify-end space-x-3">
             <button
