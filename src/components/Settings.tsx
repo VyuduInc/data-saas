@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   ModalContent,
@@ -12,9 +12,12 @@ import {
   SelectItem,
   Textarea,
   Input,
+  Spinner,
 } from "@nextui-org/react";
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { SparklesIcon, Cog6ToothIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { useSettings } from '@/hooks/useSettings';
+import { useToast } from '@/hooks/useToast';
 
 interface SettingsProps {
   isOpen: boolean;
@@ -23,27 +26,75 @@ interface SettingsProps {
 
 export function Settings({ isOpen, onClose }: SettingsProps) {
   const [activeTab, setActiveTab] = useState('general');
-  const [settings, setSettings] = useState({
-    theme: 'light',
-    model: 'GPT-4o',
-    runtime: 'Python',
-    alwaysShowCode: false,
-    context: '',
-    responseStyle: '',
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { settings, setSettings } = useSettings();
+  const { showToast } = useToast();
 
-  const handleSave = () => {
-    // Save settings to backend/localStorage
-    onClose();
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/settings');
+        if (!response.ok) throw new Error('Failed to load settings');
+        const data = await response.json();
+        setSettings(data);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        showToast({
+          title: 'Error',
+          description: 'Failed to load settings',
+          type: 'error',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      loadSettings();
+    }
+  }, [isOpen, setSettings, showToast]);
+
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+
+      if (!response.ok) throw new Error('Failed to save settings');
+
+      showToast({
+        title: 'Success',
+        description: 'Settings saved successfully',
+        type: 'success',
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      showToast({
+        title: 'Error',
+        description: 'Failed to save settings',
+        type: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const renderTooltip = (text: string) => {
+  if (isLoading) {
     return (
-      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1">
-        {text}
-      </div>
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalContent>
+          <div className="p-8 flex justify-center items-center">
+            <Spinner size="lg" />
+          </div>
+        </ModalContent>
+      </Modal>
     );
-  };
+  }
 
   return (
     <Modal 
@@ -61,21 +112,24 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
             </Button>
           </div>
 
-          <div className="bg-purple-50 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <SparklesIcon className="h-5 w-5 text-purple-600" />
-              <Button
-                color="secondary"
-                variant="flat"
-                size="sm"
-              >
-                Upgrade
-              </Button>
+          {!settings.isPremium && (
+            <div className="bg-purple-50 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2">
+                <SparklesIcon className="h-5 w-5 text-purple-600" />
+                <Button
+                  color="secondary"
+                  variant="flat"
+                  size="sm"
+                  href="/pricing"
+                >
+                  Upgrade
+                </Button>
+              </div>
+              <p className="text-sm text-purple-600 mt-1">
+                Upgrade now to unlock all settings
+              </p>
             </div>
-            <p className="text-sm text-purple-600 mt-1">
-              Upgrade now to unlock all settings
-            </p>
-          </div>
+          )}
 
           <div className="flex mb-6">
             <button
@@ -108,7 +162,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     defaultSelected={settings.theme === 'dark'}
                     size="lg"
                     color="secondary"
-                    onChange={(e) => setSettings(s => ({ ...s, theme: e.target.checked ? 'dark' : 'light' }))}
+                    onChange={(e) => setSettings({ theme: e.target.checked ? 'dark' : 'light' })}
                     thumbIcon={({ isSelected }) => (isSelected ? '🌙' : '☀️')}
                   />
                 </div>
@@ -118,44 +172,30 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                 <h3 className="text-sm font-medium mb-1">Model</h3>
                 <p className="text-sm text-gray-500">Choose the AI model you would like to use</p>
                 <Select
-                  defaultSelectedKeys={[settings.model]}
+                  selectedKeys={[settings.model]}
                   className="mt-2"
                   size="sm"
                   variant="bordered"
-                  startContent={<span className="text-xl">🤖</span>}
+                  onChange={(e) => setSettings({ model: e.target.value as 'gpt-4' | 'gpt-3.5-turbo' })}
                 >
-                  <SelectItem key="GPT-4o">GPT-4o</SelectItem>
-                  <SelectItem key="GPT-3.5">GPT-3.5</SelectItem>
+                  <SelectItem key="gpt-4" startContent="🤖">GPT-4</SelectItem>
+                  <SelectItem key="gpt-3.5-turbo" startContent="🤖">GPT-3.5</SelectItem>
                 </Select>
-                <div className="relative mt-1">
-                  {settings.model === 'GPT-4o' && (
-                    <div className="absolute top-0 right-0 bg-gray-900 text-white text-xs rounded px-2 py-1">
-                      Using GPT-4o model for analysis
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div>
                 <h3 className="text-sm font-medium mb-1">Runtime</h3>
                 <p className="text-sm text-gray-500">Choose the code you would like to see</p>
                 <Select
-                  defaultSelectedKeys={[settings.runtime]}
+                  selectedKeys={[settings.runtime]}
                   className="mt-2"
                   size="sm"
                   variant="bordered"
-                  startContent={<span className="text-xl">🐍</span>}
+                  onChange={(e) => setSettings({ runtime: e.target.value as 'Python' | 'JavaScript' })}
                 >
-                  <SelectItem key="Python">Python</SelectItem>
-                  <SelectItem key="JavaScript">JavaScript</SelectItem>
+                  <SelectItem key="Python" startContent="🐍">Python</SelectItem>
+                  <SelectItem key="JavaScript" startContent="⚡">JavaScript</SelectItem>
                 </Select>
-                <div className="relative mt-1">
-                  {settings.runtime === 'Python' && (
-                    <div className="absolute top-0 right-0 bg-gray-900 text-white text-xs rounded px-2 py-1">
-                      Using Python for analysis
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div>
@@ -163,10 +203,10 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                 <p className="text-sm text-gray-500">Show code blocks by default in responses</p>
                 <div className="mt-2 flex justify-end">
                   <Switch
-                    defaultSelected={settings.alwaysShowCode}
+                    isSelected={settings.alwaysShowCode}
                     size="lg"
                     color="secondary"
-                    onChange={(e) => setSettings(s => ({ ...s, alwaysShowCode: e.target.checked }))}
+                    onChange={(e) => setSettings({ alwaysShowCode: e.target.checked })}
                   />
                 </div>
               </div>
@@ -176,16 +216,16 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-sm font-medium">Context</h3>
-                  <span className="text-purple-600">🔒</span>
+                  {!settings.isPremium && <span className="text-purple-600">🔒</span>}
                 </div>
-                <p className="text-sm text-gray-500">What would you like Vaydr to know?</p>
+                <p className="text-sm text-gray-500">What would you like the AI to know?</p>
                 <Textarea
                   value={settings.context}
-                  onChange={(e) => setSettings(s => ({ ...s, context: e.target.value }))}
-                  placeholder="Include instructions you would like Vaydr to remember throughout your conversations."
+                  onChange={(e) => setSettings({ context: e.target.value })}
+                  placeholder="Include instructions you would like the AI to remember throughout your conversations."
                   className="mt-2"
                   maxRows={4}
-                  isDisabled
+                  isDisabled={!settings.isPremium}
                 />
                 <div className="text-right text-xs text-gray-500 mt-1">
                   {settings.context.length}/1000
@@ -195,33 +235,28 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-sm font-medium">Response style</h3>
-                  <span className="text-purple-600">🔒</span>
+                  {!settings.isPremium && <span className="text-purple-600">🔒</span>}
                 </div>
-                <p className="text-sm text-gray-500">How would you like Vaydr to respond?</p>
+                <p className="text-sm text-gray-500">How would you like the AI to respond?</p>
                 <Input
                   value={settings.responseStyle}
-                  onChange={(e) => setSettings(s => ({ ...s, responseStyle: e.target.value }))}
-                  placeholder="e.g. professional, friendly, succinct, French"
+                  onChange={(e) => setSettings({ responseStyle: e.target.value })}
+                  placeholder="e.g., Concise and technical"
                   className="mt-2"
-                  maxLength={50}
-                  isDisabled
+                  isDisabled={!settings.isPremium}
                 />
-                <div className="text-right text-xs text-gray-500 mt-1">
-                  {settings.responseStyle.length}/50
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  color="secondary"
-                  className="mt-4"
-                  onClick={handleSave}
-                >
-                  Save changes
-                </Button>
               </div>
             </div>
           )}
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="light" onPress={onClose}>
+              Cancel
+            </Button>
+            <Button color="secondary" onPress={handleSave} isLoading={isLoading}>
+              Save Changes
+            </Button>
+          </div>
         </div>
       </ModalContent>
     </Modal>
