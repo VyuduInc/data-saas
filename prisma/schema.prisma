@@ -27,10 +27,14 @@ model Analysis {
   data        Json
   summary     Json
   charts      Json
+  fileType    String    @default("csv")  // 'csv', 'json', 'excel', 'pdf', 'image'
+  encrypted   Boolean   @default(false)
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files       File[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deleteAt    DateTime?
 }
 
 model Chat {
@@ -59,4 +63,18 @@ model Message {
 
   @@index([chatId])
   @@index([userId])
+}
+
+model File {
+  id          String    @id @default(cuid())
+  name        String
+  type        String    // 'csv', 'json', 'excel', 'pdf', 'image'
+  size        Int
+  path        String
+  encrypted   Boolean   @default(false)
+  analysisId  String
+  analysis    Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deleteAt    DateTime?
 }

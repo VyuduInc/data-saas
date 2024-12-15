@@ -10,6 +10,27 @@ const settingsSchema = z.object({
   alwaysShowCode: z.boolean(),
   context: z.string().max(1000),
   responseStyle: z.string().max(200),
+  security: z.object({
+    encryptData: z.boolean().default(false),
+    autoDeleteDays: z.number().min(0).max(365).default(30),
+    maxFileSize: z.number().min(1).max(50).default(10), // in MB
+  }),
+  fileTypes: z.object({
+    allowPdf: z.boolean().default(true),
+    allowImage: z.boolean().default(true),
+    allowCsv: z.boolean().default(true),
+    allowJson: z.boolean().default(true),
+    allowExcel: z.boolean().default(true),
+  }),
+  mlFeatures: z.object({
+    enableClustering: z.boolean().default(false),
+    enablePrediction: z.boolean().default(false),
+  }),
+  export: z.object({
+    allowDocx: z.boolean().default(true),
+    allowPdf: z.boolean().default(true),
+    allowHtml: z.boolean().default(true),
+  }),
 });
 
 export async function GET(request: Request) {
