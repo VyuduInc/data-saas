@@ -54,12 +54,12 @@ UPSTASH_REDIS_REST_URL="your-upstash-redis-url"
 UPSTASH_REDIS_REST_TOKEN="your-upstash-redis-token"
 
 # Pusher (for real-time features)
-NEXT_PUBLIC_PUSHER_KEY="your-pusher-key"
-NEXT_PUBLIC_PUSHER_CLUSTER="your-pusher-cluster"
-PUSHER_APP_ID="your-pusher-app-id"
-PUSHER_KEY="your-pusher-key"
-PUSHER_SECRET="your-pusher-secret"
-PUSHER_CLUSTER="your-pusher-cluster"
+NEXT_PUBLIC_PUSHER_KEY="your-pusher-key"         # Required for client-side
+NEXT_PUBLIC_PUSHER_CLUSTER="your-pusher-cluster" # Required for client-side
+PUSHER_APP_ID="your-pusher-app-id"              # Required for server-side
+PUSHER_KEY="your-pusher-key"                    # Required for server-side
+PUSHER_SECRET="your-pusher-secret"              # Required for server-side
+PUSHER_CLUSTER="your-pusher-cluster"            # Required for server-side
 
 # Other APIs
 HUGGINGFACE_API_KEY="your-huggingface-api-key"  # Optional, for AI features
@@ -99,132 +99,74 @@ npx prisma db seed
 ]
 ```
 
-3. Create an IAM user with S3 access:
-   - Create a new IAM user
-   - Attach the `AWSs3FullAccess` policy or create a custom policy:
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:PutObject",
-                "s3:GetObject",
-                "s3:DeleteObject",
-                "s3:ListBucket"
-            ],
-            "Resource": [
-                "arn:aws:s3:::your-bucket-name",
-                "arn:aws:s3:::your-bucket-name/*"
-            ]
-        }
-    ]
-}
-```
-
 ### Pusher Configuration
 
-1. Create a new Pusher Channels app at https://pusher.com
-2. Get your app credentials from the "App Keys" section
-3. Update your `.env` file with the credentials
-4. Configure client-side options in your Pusher dashboard:
+1. Create a Pusher Channels app at [https://pusher.com](https://pusher.com)
+2. Configure your Pusher app:
    - Enable client events
    - Add your development and production domains to the CORS origins
+   - Note down all credentials (app_id, key, secret, cluster)
+3. Important: All Pusher environment variables are required and validated at startup
 
-### Upstash Redis Setup
+### Upstash Redis Configuration
 
-1. Create a new Redis database at https://upstash.com
-2. Get your REST URL and token from the "REST API" section
-3. Update your `.env` file with the credentials
+1. Create a Redis database at [https://upstash.com](https://upstash.com)
+2. Configure rate limiting:
+   - Default: 10 requests per 10 seconds per IP
+   - Customize in `src/middleware.ts` if needed
+3. Note: Rate limiting is enforced globally for all API routes
 
-## Running the Application
+## Development
 
 1. Start the development server:
 ```bash
 npm run dev
 ```
 
-2. Access the application at `http://localhost:3000`
-
-3. Default test account credentials:
-   - Email: test@example.com
-   - Password: test123
-
-## Features and Testing
-
-### Real-time Chat
-- Create a new chat
-- Send messages (text, code, images)
-- Test real-time updates across multiple browsers
-- Try search and filters
-
-### File Upload
-- Test profile image upload
-- Verify file type restrictions
-- Check file size limits (max 5MB)
-
-### Rate Limiting
-- API endpoints are limited to 10 requests per 10 seconds
-- Test with rapid requests to verify limiting
-
-## Common Issues and Solutions
-
-### Database Connection
-If you can't connect to the database:
-1. Verify PostgreSQL is running
-2. Check your DATABASE_URL format
-3. Ensure the database exists
-
-### Real-time Updates Not Working
-1. Verify Pusher credentials
-2. Check browser console for connection errors
-3. Ensure WebSocket connections are allowed by your firewall
-
-### File Upload Issues
-1. Verify S3 bucket permissions
-2. Check CORS configuration
-3. Validate AWS credentials
+2. Access the application at [http://localhost:3000](http://localhost:3000)
 
 ## Production Deployment
 
-1. Update environment variables for production
-2. Build the application:
+1. Build the application:
 ```bash
 npm run build
 ```
 
-3. Start the production server:
-```bash
-npm start
-```
+2. Configure production environment:
+   - Set `NODE_ENV=production`
+   - Update `NEXTAUTH_URL` to your production domain
+   - Use secure WebSocket connections (wss://)
+   - Configure proper CORS settings
 
-## Security Considerations
-
-1. **Environment Variables**:
-   - Never commit `.env` file
-   - Use different secrets for development and production
-   - Rotate secrets periodically
-
-2. **API Keys**:
-   - Use restricted API keys
-   - Set up proper CORS policies
-   - Implement rate limiting
-
-3. **File Upload**:
-   - Validate file types
-   - Limit file sizes
-   - Scan for malware
-
-4. **Authentication**:
-   - Use HTTPS in production
+3. Security considerations:
+   - Enable HTTPS
    - Set secure cookie options
    - Implement proper session management
+   - Use environment-specific API keys
+   - Configure proper CORS headers
 
-## Support and Resources
+## Troubleshooting
 
-- [Prisma Documentation](https://www.prisma.io/docs/)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Pusher Documentation](https://pusher.com/docs)
-- [AWS S3 Documentation](https://docs.aws.amazon.com/s3)
-- [Upstash Documentation](https://docs.upstash.com)
+### Common Issues
+
+1. **Real-time Updates Not Working**:
+   - Verify all Pusher environment variables are set
+   - Check WebSocket connectivity
+   - Ensure proper channel naming (no special characters)
+
+2. **Rate Limiting Too Strict**:
+   - Adjust limits in `src/middleware.ts`
+   - Check Redis connection
+   - Verify IP detection
+
+3. **File Uploads Failing**:
+   - Check S3 bucket permissions
+   - Verify CORS configuration
+   - Check file size limits
+
+## Support
+
+For additional help:
+- Check our [GitHub Issues](https://github.com/your-org/data-saas/issues)
+- Join our [Discord community](https://discord.gg/your-invite)
+- Email support at support@your-domain.com

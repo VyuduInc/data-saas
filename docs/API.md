@@ -7,9 +7,47 @@ All API endpoints require authentication using NextAuth.js. Include the session 
 ## Rate Limiting
 
 API endpoints are rate-limited using Upstash Redis:
-- 10 requests per 10 seconds per user
-- Rate limits are enforced per endpoint
+- 10 requests per 10 seconds per IP address
+- Rate limits are enforced globally for all API routes
+- Headers returned with each request:
+  - `X-RateLimit-Limit`: Maximum requests allowed
+  - `X-RateLimit-Remaining`: Remaining requests in window
+  - `X-RateLimit-Reset`: Time when the rate limit resets
 - Exceeded limits return 429 Too Many Requests
+
+## WebSocket Events
+
+Real-time updates are handled through Pusher Channels:
+
+### Message Events
+- `message:sent` - New message created
+  ```typescript
+  interface MessageSent {
+    id: string;
+    content: string;
+    type: 'text' | 'code' | 'image';
+    userId: string;
+    createdAt: string;
+  }
+  ```
+- `message:updated` - Message content updated
+  ```typescript
+  interface MessageUpdated {
+    id: string;
+    updates: {
+      content?: string;
+      type?: 'text' | 'code' | 'image';
+    }
+  }
+  ```
+- `message:deleted` - Message removed
+  ```typescript
+  type MessageDeleted = string; // messageId
+  ```
+
+### Chat Events
+- `chat:updated` - Chat details updated
+- `chat:deleted` - Chat removed
 
 ## API Endpoints
 
@@ -30,7 +68,8 @@ API endpoints are rate-limited using Upstash Redis:
 {
     "user": {
         "name": "string",
-        "email": "string"
+        "email": "string",
+        "updatedAt": "string"
     }
 }
 ```
@@ -42,11 +81,13 @@ API endpoints are rate-limited using Upstash Redis:
   - Field: "image" (file)
 - Restrictions:
   - Max size: 5MB
-  - Allowed types: image/*
+  - Allowed types: image/jpeg, image/png, image/gif
+  - Maximum dimensions: 2048x2048
 - Response:
 ```json
 {
-    "imageUrl": "string"
+    "imageUrl": "string",
+    "updatedAt": "string"
 }
 ```
 
@@ -60,12 +101,13 @@ API endpoints are rate-limited using Upstash Redis:
 {
     "settings": {
         "model": "string",
-        "theme": "string",
+        "theme": "light" | "dark" | "system",
         "context": "string",
         "runtime": "string",
         "isPremium": boolean,
-        "responseStyle": "string",
-        "alwaysShowCode": boolean
+        "responseStyle": "concise" | "detailed",
+        "alwaysShowCode": boolean,
+        "updatedAt": "string"
     }
 }
 ```
@@ -78,10 +120,10 @@ API endpoints are rate-limited using Upstash Redis:
 {
     "settings": {
         "model": "string",
-        "theme": "string",
+        "theme": "light" | "dark" | "system",
         "context": "string",
         "runtime": "string",
-        "responseStyle": "string",
+        "responseStyle": "concise" | "detailed",
         "alwaysShowCode": boolean
     }
 }
@@ -104,18 +146,20 @@ API endpoints are rate-limited using Upstash Redis:
 {
     "id": "string",
     "title": "string",
-    "active": boolean,
-    "createdAt": "string",
-    "updatedAt": "string"
+    "createdAt": "string"
 }
 ```
 
-#### Get Messages
+#### Get Chat Messages
 - **GET** `/api/chats/{chatId}/messages`
-- Retrieves messages with pagination
+- Retrieves messages for a chat
 - Query parameters:
-  - page (default: 1)
-  - limit (default: 50)
+  - `page`: number (default: 1)
+  - `limit`: number (default: 50, max: 100)
+  - `type`: "text" | "code" | "image" (optional)
+  - `search`: string (optional)
+  - `startDate`: ISO date string (optional)
+  - `endDate`: ISO date string (optional)
 - Response:
 ```json
 {
@@ -124,14 +168,14 @@ API endpoints are rate-limited using Upstash Redis:
             "id": "string",
             "content": "string",
             "type": "text" | "code" | "image",
+            "userId": "string",
             "createdAt": "string",
-            "user": {
-                "id": "string",
-                "name": "string",
-                "image": "string"
-            }
+            "updatedAt": "string"
         }
-    ]
+    ],
+    "total": number,
+    "page": number,
+    "limit": number
 }
 ```
 
@@ -142,114 +186,62 @@ API endpoints are rate-limited using Upstash Redis:
 ```json
 {
     "content": "string",
-    "type": "text" | "code" | "image",
-    "metadata": {
-        // Optional metadata
-    }
+    "type": "text" | "code" | "image"
 }
 ```
-- Response: Message object
+- Response:
+```json
+{
+    "id": "string",
+    "content": "string",
+    "type": "text" | "code" | "image",
+    "userId": "string",
+    "createdAt": "string"
+}
+```
 
 #### Update Message
-- **PATCH** `/api/chats/{chatId}/messages/{messageId}`
+- **PUT** `/api/chats/{chatId}/messages/{messageId}`
 - Updates an existing message
 - Request body:
 ```json
 {
     "content": "string",
-    "type": "text" | "code" | "image",
-    "metadata": {
-        // Optional metadata
-    }
+    "type": "text" | "code" | "image"
 }
 ```
-- Response: Message object
+- Response:
+```json
+{
+    "id": "string",
+    "content": "string",
+    "type": "text" | "code" | "image",
+    "updatedAt": "string"
+}
+```
 
 #### Delete Message
 - **DELETE** `/api/chats/{chatId}/messages/{messageId}`
 - Deletes a message
 - Response: 204 No Content
 
-#### Search Messages
-- **GET** `/api/chats/{chatId}/search`
-- Searches messages in a chat
-- Query parameters:
-  - query: search term
-  - type: "all" | "text" | "code" | "image"
-  - dateRange: "all" | "today" | "week" | "month"
-- Response:
+## Error Responses
+
+All error responses follow this format:
 ```json
 {
-    "messages": [
-        // Array of message objects
-    ]
+    "error": {
+        "message": "string",
+        "code": "string",
+        "details": {} // Optional additional information
+    }
 }
 ```
 
-## Real-time Events
-
-Using Pusher Channels:
-
-### Chat Events
-- `chat:updated` - Chat details updated
-- `chat:deleted` - Chat deleted
-
-### Message Events
-- `message:sent` - New message sent
-- `message:updated` - Message updated
-- `message:deleted` - Message deleted
-
-Event channel format: `chat-{chatId}`
-
-## Error Handling
-
-All endpoints may return the following error responses:
-
-```json
-{
-    "error": "Error message"
-}
-```
-
-Common status codes:
-- 400: Bad Request (invalid input)
-- 401: Unauthorized (not logged in)
-- 403: Forbidden (insufficient permissions)
-- 404: Not Found
-- 429: Too Many Requests (rate limit exceeded)
-- 500: Internal Server Error
-
-## File Upload
-
-### Restrictions
-- Maximum file size: 5MB
-- Allowed image formats: Any image/* MIME type
-- Storage: AWS S3
-- File naming: UUIDs with original extension
-- CORS: Configured per environment
-
-### Security
-- File type validation
-- Size validation
-- Malware scanning (production)
-- Signed URLs for uploads
-- Private bucket access
-
-## Development Tools
-
-### Testing the API
-- Use the provided Postman collection: [download link]
-- Environment variables template included
-- Request/response examples for all endpoints
-
-### Monitoring
-- Rate limit metrics in Upstash dashboard
-- Real-time events in Pusher dashboard
-- AWS S3 metrics for file uploads
-
-## Support
-
-For API support:
-- Check error responses for detailed messages
-- Review the setup guide for configuration
-- Contact the development team for access issues
+Common error codes:
+- `unauthorized`: Authentication required
+- `forbidden`: Insufficient permissions
+- `not_found`: Resource not found
+- `validation_error`: Invalid request data
+- `rate_limited`: Too many requests
+- `internal_error`: Server error
