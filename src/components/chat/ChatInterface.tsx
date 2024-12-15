@@ -113,13 +113,7 @@ export function ChatInterface() {
         ) : (
           <>
             {messages.map((message, index) => (
-              <ChatMessage 
-                key={index} 
-                role={message.role} 
-                content={message.content}
-                type={message.type}
-                plotData={message.plotData}
-              />
+              <ChatMessage key={index} {...message} />
             ))}
             {isLoading && (
               <div className="flex justify-center">

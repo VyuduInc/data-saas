@@ -3,14 +3,14 @@ import { DocumentIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
 interface ChatMessageProps {
-  message: {
-    role: 'user' | 'assistant';
-    content: string;
-    files?: string[];
-  };
+  role: 'user' | 'assistant';
+  content: string;
+  type?: 'text' | 'plot';
+  plotData?: any;
+  files?: string[];
 }
 
-export function ChatMessage({ message: { role, content, files } }: ChatMessageProps) {
+export function ChatMessage({ role, content, type, plotData, files }: ChatMessageProps) {
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
 
   const handleImageLoad = (url: string) => {
