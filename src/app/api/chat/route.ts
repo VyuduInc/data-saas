@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import prisma from '@/lib/prisma';
+import { uploadToS3 } from '@/lib/s3';
+import { nanoid } from 'nanoid';
+import { getChatCompletion, generateTitle } from '@/lib/openai';
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +15,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const message = formData.get('message') as string;
     const files = formData.getAll('files') as File[];
+    const model = formData.get('model') as 'gpt-4' | 'gpt-3.5-turbo' || 'gpt-3.5-turbo';
 
     if (!message && files.length === 0) {
       return NextResponse.json({ error: 'No message or files provided' }, { status: 400 });
@@ -25,13 +29,26 @@ export async function POST(request: Request) {
         userId,
         active: true,
       },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          take: 10, // Get last 10 messages for context
+        },
+      },
     });
 
     if (!chat) {
+      const title = await generateTitle(message);
       chat = await prisma.chat.create({
         data: {
           userId,
           active: true,
+          title,
+        },
+        include: {
+          messages: true,
         },
       });
     }
@@ -39,12 +56,12 @@ export async function POST(request: Request) {
     // Handle file uploads
     const fileUrls = [];
     for (const file of files) {
-      // Save file and get URL
-      // TODO: Implement file storage (e.g., S3, local storage)
-      fileUrls.push(`/uploads/${file.name}`);
+      const fileKey = `${userId}/${chat.id}/${nanoid()}-${file.name}`;
+      const fileUrl = await uploadToS3(file, fileKey);
+      fileUrls.push(fileUrl);
     }
 
-    // Create message
+    // Create user message
     const newMessage = await prisma.message.create({
       data: {
         content: message,
@@ -54,13 +71,20 @@ export async function POST(request: Request) {
       },
     });
 
-    // TODO: Add your AI model integration here
-    // For now, we'll just echo back a response
+    // Prepare context for AI
+    const context = chat.messages.map(msg => ({
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content,
+    }));
+    context.push({ role: 'user', content: message });
+
+    // Get AI response
+    const aiMessage = await getChatCompletion(context, model);
+
+    // Save AI response
     const aiResponse = await prisma.message.create({
       data: {
-        content: `I received your message: "${message}". ${
-          files.length > 0 ? `And ${files.length} files.` : ''
-        } This is a placeholder response.`,
+        content: aiMessage.content || 'No response generated',
         chatId: chat.id,
         role: 'assistant',
       },
