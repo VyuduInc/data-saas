@@ -16,6 +16,7 @@ model User {
   settings      Json?     @default("{}")
   analyses      Analysis[]
   chats         Chat[]
+  messages      Message[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -46,12 +47,16 @@ model Chat {
 model Message {
   id          String    @id @default(cuid())
   content     String    @db.Text
+  type        String    @default("text")  // 'text', 'code', or 'image'
   role        String    // 'user' or 'assistant'
   files       String[]  @default([])
   metadata    Json?     @default("{}")  // For storing things like code language, file types, etc.
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   chatId      String
   chat        Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
 
   @@index([chatId])
+  @@index([userId])
 }
