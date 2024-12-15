@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const ip = request.ip ?? '127.0.0.1';
     const { success, pending, limit, reset, remaining } = await ratelimit.limit(
-      \`ratelimit_\${ip}\`
+      `ratelimit_${ip}`
     );
 
     response.headers.set('X-RateLimit-Limit', limit.toString());

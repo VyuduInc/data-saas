@@ -35,10 +35,14 @@ export const useMessages = create<MessagesState>((set, get) => ({
       }
 
       const response = await fetch(
-        `/api/chats/${chatId}/messages?page=${page}&limit=${MESSAGES_PER_PAGE}`
+        `/api/chats/${chatId}/messages?page=${page}&limit=${MESSAGES_PER_PAGE}`,
+        { credentials: 'include' }
       );
       
-      if (!response.ok) throw new Error('Failed to load messages');
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to load messages');
+      }
       
       const data = await response.json();
       
@@ -48,17 +52,19 @@ export const useMessages = create<MessagesState>((set, get) => ({
           : [...state.messages, ...data.messages],
         hasMore: data.messages.length === MESSAGES_PER_PAGE,
         currentPage: page,
+        isLoading: false,
       }));
     } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
+      set({ 
+        error: error instanceof Error ? error.message : 'An error occurred',
+        isLoading: false 
+      });
     }
   },
 
   addMessage: (message: Message) => {
     set((state) => ({
-      messages: [message, ...state.messages],
+      messages: [...state.messages, message],
     }));
   },
 
@@ -77,6 +83,11 @@ export const useMessages = create<MessagesState>((set, get) => ({
   },
 
   reset: () => {
+    const channel = pusherClient.channel(get().activeChat || '');
+    if (channel) {
+      channel.unbind_all();
+      pusherClient.unsubscribe(get().activeChat || '');
+    }
     set({
       messages: [],
       hasMore: true,
@@ -90,7 +101,7 @@ export const useMessages = create<MessagesState>((set, get) => ({
 
 // Subscribe to real-time updates
 export const subscribeToChat = (chatId: string) => {
-  const channel = pusherClient.subscribe(`chat-${chatId}`);
+  const channel = pusherClient.subscribe(chatId);
   
   channel.bind(EVENTS.MESSAGE_SENT, (message: Message) => {
     useMessages.getState().addMessage(message);
@@ -106,6 +117,6 @@ export const subscribeToChat = (chatId: string) => {
 
   return () => {
     channel.unbind_all();
-    pusherClient.unsubscribe(`chat-${chatId}`);
+    pusherClient.unsubscribe(chatId);
   };
 };
