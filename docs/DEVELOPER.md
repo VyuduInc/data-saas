@@ -12,6 +12,9 @@ This document provides comprehensive documentation for developers working on the
 6. [Security](#security)
 7. [Configuration](#configuration)
 8. [Advanced Features](#advanced-features)
+9. [Components](#components)
+10. [Environment Variables](#environment-variables)
+11. [API Documentation](#api-documentation)
 
 ## Architecture
 
@@ -370,6 +373,90 @@ const jobId = await processor.addJob({
   }
 });
 ```
+
+## Components
+
+### Machine Learning (`/src/lib/ml.ts`)
+- Implements various ML algorithms
+- Supports visualization types
+- Handles model caching and thread management
+- Includes AutoML capabilities
+
+### Collaboration (`/src/lib/collaboration.ts`)
+- Real-time collaboration using Socket.IO
+- Cursor tracking and presence awareness
+- Change synchronization with OT
+- Room-based collaboration management
+
+### Security (`/src/lib/security.ts`)
+- AES-256-GCM encryption
+- MFA implementation
+- Password policy enforcement
+- Audit logging
+
+### Export (`/src/lib/export.ts`)
+- Multiple format support
+- Encryption and watermarking
+- Metadata handling
+- Compression options
+
+### Batch Processing (`/src/lib/batch.ts`)
+- Worker-based job management
+- Progress tracking
+- Job control (pause/resume/cancel)
+- Auto-retry mechanism
+
+## Environment Variables
+
+```env
+# Database
+DATABASE_URL=
+
+# AWS Configuration
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=
+AWS_BUCKET_NAME=
+
+# Security
+JWT_SECRET=
+ENCRYPTION_KEY=
+
+# ML Configuration
+ML_MAX_THREADS=
+ML_MODEL_CACHE_SIZE=
+ML_DEFAULT_BATCH_SIZE=
+
+# Socket.IO
+SOCKET_SERVER_URL=
+```
+
+## API Documentation
+
+### ML Endpoints
+- `POST /api/ml/analyze`: Run ML analysis
+- `POST /api/ml/visualize`: Generate visualizations
+- `GET /api/ml/models`: List available models
+
+### Collaboration Endpoints
+- `POST /api/collab/join`: Join collaboration room
+- `POST /api/collab/sync`: Sync changes
+- `POST /api/collab/presence`: Update presence
+
+### Security Endpoints
+- `POST /api/auth/mfa`: Handle MFA
+- `POST /api/auth/password`: Update password
+- `GET /api/audit/logs`: Get audit logs
+
+### Export Endpoints
+- `POST /api/export`: Export data
+- `GET /api/export/formats`: List formats
+- `POST /api/export/encrypt`: Encrypt export
+
+### Batch Endpoints
+- `POST /api/batch/create`: Create job
+- `GET /api/batch/status`: Get job status
+- `POST /api/batch/control`: Control job
 
 ## Getting Started
 

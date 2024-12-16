@@ -15,7 +15,7 @@ import {
   Spinner,
 } from "@nextui-org/react";
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { SparklesIcon, Cog6ToothIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, Cog6ToothIcon, PencilIcon, UsersIcon, ShieldCheckIcon, ArrowDownTrayIcon, QueueListIcon } from '@heroicons/react/24/outline';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/hooks/useToast';
 
@@ -31,15 +31,56 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
   const { showToast } = useToast();
 
   const tabs = [
-    { id: 'general', name: 'General', icon: Cog6ToothIcon },
-    { id: 'security', name: 'Security', icon: XMarkIcon },
-    { id: 'files', name: 'File Types', icon: PencilIcon },
-    { id: 'ml', name: 'ML Features', icon: SparklesIcon },
-    { id: 'export', name: 'Export', icon: PencilIcon },
+    { id: 'general', label: 'General', icon: Cog6ToothIcon },
+    { id: 'ml', label: 'Machine Learning', icon: SparklesIcon },
+    { id: 'collaboration', label: 'Collaboration', icon: UsersIcon },
+    { id: 'security', label: 'Security', icon: ShieldCheckIcon },
+    { id: 'export', label: 'Export', icon: ArrowDownTrayIcon },
+    { id: 'batch', label: 'Batch Processing', icon: QueueListIcon },
   ];
 
-  const updateSettings = (key: string, value: any) => {
-    setSettings((prevSettings) => ({ ...prevSettings, [key]: value }));
+  const [localSettings, setLocalSettings] = useState({
+    general: {
+      theme: 'light',
+      language: 'en',
+      notifications: true,
+      autoSave: true
+    },
+    ml: {
+      defaultAlgorithm: 'kmeans',
+      maxThreads: 4,
+      modelCacheSize: 1000,
+      defaultBatchSize: 100,
+      enableAutoML: false
+    },
+    collaboration: {
+      showCursors: true,
+      showPresence: true,
+      autoSync: true,
+      changeBufferTimeout: 500
+    },
+    security: {
+      mfaEnabled: false,
+      encryptExports: true,
+      auditLogging: true,
+      passwordExpiration: 90
+    },
+    export: {
+      defaultFormat: 'pdf',
+      includeMetadata: true,
+      compression: true,
+      watermark: false
+    },
+    batch: {
+      maxConcurrentJobs: 3,
+      autoRetry: true,
+      maxRetries: 3,
+      notifyOnCompletion: true
+    }
+  });
+
+  const updateSettings = (category: string, key: string, value: any) => {
+    setLocalSettings((prevSettings) => ({ ...prevSettings, [category]: { ...prevSettings[category], [key]: value } }));
   };
 
   useEffect(() => {
@@ -49,7 +90,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
         const response = await fetch('/api/settings');
         if (!response.ok) throw new Error('Failed to load settings');
         const data = await response.json();
-        setSettings(data);
+        setLocalSettings(data);
       } catch (error) {
         console.error('Error loading settings:', error);
         showToast({
@@ -65,7 +106,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
     if (isOpen) {
       loadSettings();
     }
-  }, [isOpen, setSettings, showToast]);
+  }, [isOpen, setLocalSettings, showToast]);
 
   const handleSave = async () => {
     try {
@@ -73,7 +114,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(localSettings),
       });
 
       if (!response.ok) throw new Error('Failed to save settings');
@@ -100,161 +141,207 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
     switch (activeTab) {
       case 'general':
         return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-sm font-medium mb-1">Appearance</h3>
-              <p className="text-sm text-gray-500">Choose your preferred theme</p>
-              <div className="mt-2 flex justify-end">
-                <Switch
-                  defaultSelected={settings.theme === 'dark'}
-                  size="lg"
-                  color="secondary"
-                  onChange={(e) => updateSettings('theme', e.target.checked ? 'dark' : 'light')}
-                  thumbIcon={({ isSelected }) => (isSelected ? '🌙' : '☀️')}
-                />
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-1">Model</h3>
-              <p className="text-sm text-gray-500">Choose the AI model you would like to use</p>
-              <Select
-                selectedKeys={[settings.model]}
-                className="mt-2"
-                size="sm"
-                variant="bordered"
-                onChange={(e) => updateSettings('model', e.target.value as 'gpt-4' | 'gpt-3.5-turbo')}
-              >
-                <SelectItem key="gpt-4" startContent="🤖">GPT-4</SelectItem>
-                <SelectItem key="gpt-3.5-turbo" startContent="🤖">GPT-3.5</SelectItem>
-              </Select>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-1">Runtime</h3>
-              <p className="text-sm text-gray-500">Choose the code you would like to see</p>
-              <Select
-                selectedKeys={[settings.runtime]}
-                className="mt-2"
-                size="sm"
-                variant="bordered"
-                onChange={(e) => updateSettings('runtime', e.target.value as 'Python' | 'JavaScript')}
-              >
-                <SelectItem key="Python" startContent="🐍">Python</SelectItem>
-                <SelectItem key="JavaScript" startContent="⚡">JavaScript</SelectItem>
-              </Select>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-1">Always show code</h3>
-              <p className="text-sm text-gray-500">Show code blocks by default in responses</p>
-              <div className="mt-2 flex justify-end">
-                <Switch
-                  isSelected={settings.alwaysShowCode}
-                  size="lg"
-                  color="secondary"
-                  onChange={(e) => updateSettings('alwaysShowCode', e.target.checked)}
-                />
-              </div>
-            </div>
-          </div>
-        );
-      case 'security':
-        return (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">Data Encryption</h3>
-                <p className="text-sm text-gray-500">Enable encryption for sensitive data</p>
-              </div>
-              <Switch
-                checked={settings?.security?.encryptData || false}
-                onChange={(e) => updateSettings('security.encryptData', e.target.checked)}
-              />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Auto Delete Data</h3>
-              <p className="text-sm text-gray-500">Days to keep inactive data (0 for never)</p>
-              <Input
-                type="number"
-                min={0}
-                max={365}
-                value={settings?.security?.autoDeleteDays || 30}
-                onChange={(e) => updateSettings('security.autoDeleteDays', parseInt(e.target.value))}
-              />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Max File Size</h3>
-              <p className="text-sm text-gray-500">Maximum file size in MB (1-50)</p>
-              <Input
-                type="number"
-                min={1}
-                max={50}
-                value={settings?.security?.maxFileSize || 10}
-                onChange={(e) => updateSettings('security.maxFileSize', parseInt(e.target.value))}
-              />
-            </div>
+            <Select
+              label="Theme"
+              value={localSettings.general.theme}
+              onChange={(e) => updateSettings('general', 'theme', e.target.value)}
+            >
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+              <SelectItem value="system">System</SelectItem>
+            </Select>
+            <Select
+              label="Language"
+              value={localSettings.general.language}
+              onChange={(e) => updateSettings('general', 'language', e.target.value)}
+            >
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="es">Spanish</SelectItem>
+              <SelectItem value="fr">French</SelectItem>
+            </Select>
+            <Switch
+              checked={localSettings.general.notifications}
+              onChange={(e) => updateSettings('general', 'notifications', e.target.checked)}
+            >
+              Enable Notifications
+            </Switch>
+            <Switch
+              checked={localSettings.general.autoSave}
+              onChange={(e) => updateSettings('general', 'autoSave', e.target.checked)}
+            >
+              Auto Save
+            </Switch>
           </div>
         );
-      case 'files':
-        return (
-          <div className="space-y-4">
-            {['Pdf', 'Image', 'Csv', 'Json', 'Excel'].map((type) => (
-              <div key={type} className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium">{type} Files</h3>
-                  <p className="text-sm text-gray-500">Allow {type.toLowerCase()} file uploads</p>
-                </div>
-                <Switch
-                  checked={settings?.fileTypes?.[`allow${type}`] || false}
-                  onChange={(e) => updateSettings(`fileTypes.allow${type}`, e.target.checked)}
-                />
-              </div>
-            ))}
-          </div>
-        );
+
       case 'ml':
         return (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">Data Clustering</h3>
-                <p className="text-sm text-gray-500">Enable automatic data clustering</p>
-              </div>
-              <Switch
-                checked={settings?.mlFeatures?.enableClustering || false}
-                onChange={(e) => updateSettings('mlFeatures.enableClustering', e.target.checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">Predictions</h3>
-                <p className="text-sm text-gray-500">Enable predictive analytics</p>
-              </div>
-              <Switch
-                checked={settings?.mlFeatures?.enablePrediction || false}
-                onChange={(e) => updateSettings('mlFeatures.enablePrediction', e.target.checked)}
-              />
-            </div>
+            <Select
+              label="Default Algorithm"
+              value={localSettings.ml.defaultAlgorithm}
+              onChange={(e) => updateSettings('ml', 'defaultAlgorithm', e.target.value)}
+            >
+              <SelectItem value="kmeans">K-means Clustering</SelectItem>
+              <SelectItem value="hierarchical">Hierarchical Clustering</SelectItem>
+              <SelectItem value="dbscan">DBSCAN</SelectItem>
+              <SelectItem value="linear">Linear Regression</SelectItem>
+              <SelectItem value="polynomial">Polynomial Regression</SelectItem>
+              <SelectItem value="logistic">Logistic Regression</SelectItem>
+              <SelectItem value="svm">SVM</SelectItem>
+              <SelectItem value="decision_tree">Decision Tree</SelectItem>
+              <SelectItem value="random_forest">Random Forest</SelectItem>
+            </Select>
+            <Input
+              type="number"
+              label="Max Threads"
+              value={localSettings.ml.maxThreads}
+              onChange={(e) => updateSettings('ml', 'maxThreads', parseInt(e.target.value))}
+            />
+            <Input
+              type="number"
+              label="Model Cache Size (MB)"
+              value={localSettings.ml.modelCacheSize}
+              onChange={(e) => updateSettings('ml', 'modelCacheSize', parseInt(e.target.value))}
+            />
+            <Switch
+              checked={localSettings.ml.enableAutoML}
+              onChange={(e) => updateSettings('ml', 'enableAutoML', e.target.checked)}
+            >
+              Enable AutoML
+            </Switch>
           </div>
         );
+
+      case 'collaboration':
+        return (
+          <div className="space-y-4">
+            <Switch
+              checked={localSettings.collaboration.showCursors}
+              onChange={(e) => updateSettings('collaboration', 'showCursors', e.target.checked)}
+            >
+              Show Collaborator Cursors
+            </Switch>
+            <Switch
+              checked={localSettings.collaboration.showPresence}
+              onChange={(e) => updateSettings('collaboration', 'showPresence', e.target.checked)}
+            >
+              Show Online Presence
+            </Switch>
+            <Switch
+              checked={localSettings.collaboration.autoSync}
+              onChange={(e) => updateSettings('collaboration', 'autoSync', e.target.checked)}
+            >
+              Auto Sync Changes
+            </Switch>
+            <Input
+              type="number"
+              label="Change Buffer Timeout (ms)"
+              value={localSettings.collaboration.changeBufferTimeout}
+              onChange={(e) => updateSettings('collaboration', 'changeBufferTimeout', parseInt(e.target.value))}
+            />
+          </div>
+        );
+
+      case 'security':
+        return (
+          <div className="space-y-4">
+            <Switch
+              checked={localSettings.security.mfaEnabled}
+              onChange={(e) => updateSettings('security', 'mfaEnabled', e.target.checked)}
+            >
+              Enable MFA
+            </Switch>
+            <Switch
+              checked={localSettings.security.encryptExports}
+              onChange={(e) => updateSettings('security', 'encryptExports', e.target.checked)}
+            >
+              Encrypt Exports
+            </Switch>
+            <Switch
+              checked={localSettings.security.auditLogging}
+              onChange={(e) => updateSettings('security', 'auditLogging', e.target.checked)}
+            >
+              Enable Audit Logging
+            </Switch>
+            <Input
+              type="number"
+              label="Password Expiration (days)"
+              value={localSettings.security.passwordExpiration}
+              onChange={(e) => updateSettings('security', 'passwordExpiration', parseInt(e.target.value))}
+            />
+          </div>
+        );
+
       case 'export':
         return (
           <div className="space-y-4">
-            {['Docx', 'Pdf', 'Html'].map((format) => (
-              <div key={format} className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium">{format} Export</h3>
-                  <p className="text-sm text-gray-500">Allow export to {format.toLowerCase()}</p>
-                </div>
-                <Switch
-                  checked={settings?.export?.[`allow${format}`] || false}
-                  onChange={(e) => updateSettings(`export.allow${format}`, e.target.checked)}
-                />
-              </div>
-            ))}
+            <Select
+              label="Default Export Format"
+              value={localSettings.export.defaultFormat}
+              onChange={(e) => updateSettings('export', 'defaultFormat', e.target.value)}
+            >
+              <SelectItem value="pdf">PDF</SelectItem>
+              <SelectItem value="docx">DOCX</SelectItem>
+              <SelectItem value="html">HTML</SelectItem>
+              <SelectItem value="md">Markdown</SelectItem>
+              <SelectItem value="latex">LaTeX</SelectItem>
+              <SelectItem value="xml">XML</SelectItem>
+              <SelectItem value="sql">SQL</SelectItem>
+              <SelectItem value="py">Python Script</SelectItem>
+            </Select>
+            <Switch
+              checked={localSettings.export.includeMetadata}
+              onChange={(e) => updateSettings('export', 'includeMetadata', e.target.checked)}
+            >
+              Include Metadata
+            </Switch>
+            <Switch
+              checked={localSettings.export.compression}
+              onChange={(e) => updateSettings('export', 'compression', e.target.checked)}
+            >
+              Enable Compression
+            </Switch>
+            <Switch
+              checked={localSettings.export.watermark}
+              onChange={(e) => updateSettings('export', 'watermark', e.target.checked)}
+            >
+              Add Watermark
+            </Switch>
           </div>
         );
+
+      case 'batch':
+        return (
+          <div className="space-y-4">
+            <Input
+              type="number"
+              label="Max Concurrent Jobs"
+              value={localSettings.batch.maxConcurrentJobs}
+              onChange={(e) => updateSettings('batch', 'maxConcurrentJobs', parseInt(e.target.value))}
+            />
+            <Switch
+              checked={localSettings.batch.autoRetry}
+              onChange={(e) => updateSettings('batch', 'autoRetry', e.target.checked)}
+            >
+              Auto Retry Failed Jobs
+            </Switch>
+            <Input
+              type="number"
+              label="Max Retries"
+              value={localSettings.batch.maxRetries}
+              onChange={(e) => updateSettings('batch', 'maxRetries', parseInt(e.target.value))}
+            />
+            <Switch
+              checked={localSettings.batch.notifyOnCompletion}
+              onChange={(e) => updateSettings('batch', 'notifyOnCompletion', e.target.checked)}
+            >
+              Notify on Job Completion
+            </Switch>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -317,7 +404,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                 onClick={() => setActiveTab(tab.id)}
               >
                 <tab.icon className="h-5 w-5" />
-                <span>{tab.name}</span>
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
