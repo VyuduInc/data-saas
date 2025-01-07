@@ -1,4 +1,5 @@
 import { DataPoint } from './types';
+import { createHash } from 'crypto';
 
 export function sanitizeData(data: DataPoint[]): DataPoint[] {
   return data.map(point => ({
@@ -20,4 +21,11 @@ export function validateDataPoint(point: DataPoint): boolean {
 
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat().format(value);
+}
+
+export async function computeFileHash(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hash = createHash('sha256');
+  hash.update(Buffer.from(buffer));
+  return hash.digest('hex');
 }
