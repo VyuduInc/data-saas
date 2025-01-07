@@ -3,6 +3,7 @@ import { DataTable } from '@/components/analysis/DataTable';
 import { DataSummary } from '@/components/analysis/DataSummary';
 import { LineChart } from '@/components/charts/LineChart';
 import { BarChart } from '@/components/charts/BarChart';
+import { FileUpload } from '@/components/analysis/FileUpload';
 import { cookies } from 'next/headers';
 
 async function getAnalysisData() {
@@ -29,9 +30,14 @@ export async function DashboardContent() {
 
   if (!data) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-900">No data available</h2>
-        <p className="mt-2 text-gray-500">Upload a file to see the analysis</p>
+      <div className="space-y-8">
+        <Card>
+          <h2 className="text-xl font-semibold mb-4">Upload Your Data</h2>
+          <p className="text-gray-500 mb-8">
+            Upload your data file to start analyzing. We support CSV, JSON, and Excel formats.
+          </p>
+          <FileUpload />
+        </Card>
       </div>
     );
   }
