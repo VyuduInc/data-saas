@@ -35,21 +35,24 @@ async function main() {
           {
             content: 'Hello! How can I help you analyze your data today?',
             role: 'assistant',
+            userId: user.id
           },
           {
             content: 'I need help understanding my sales data.',
             role: 'user',
+            userId: user.id
           },
           {
             content: "I'll help you analyze your sales data. Could you please share your data file or describe what specific aspects you'd like to understand?",
             role: 'assistant',
+            userId: user.id
           },
         ],
       },
     },
   });
 
-  console.log({ user, chat });
+  console.log('Database has been seeded. 🌱');
 }
 
 main()
