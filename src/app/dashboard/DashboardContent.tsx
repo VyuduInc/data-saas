@@ -1,10 +1,11 @@
 import { Card } from '@tremor/react';
 import { DataTable } from '@/components/analysis/DataTable';
 import { DataSummary } from '@/components/analysis/DataSummary';
-import { LineChart } from '@/components/charts/LineChart';
-import { BarChart } from '@/components/charts/BarChart';
+import { ChartSelector } from '@/components/charts/ChartSelector';
 import { FileUpload } from '@/components/analysis/FileUpload';
+import { ExportButton } from '@/components/analysis/ExportButton';
 import { cookies } from 'next/headers';
+import { pusherServer } from '@/lib/pusher';
 
 async function getAnalysisData() {
   const cookieStore = cookies();
@@ -42,8 +43,15 @@ export async function DashboardContent() {
     );
   }
 
+  const columns = Object.keys(data.data[0] || {});
+
   return (
     <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Analysis Dashboard</h1>
+        <ExportButton data={data.data} filename="analysis-export" />
+      </div>
+
       <Card>
         <h2 className="text-xl font-semibold mb-4">Data Summary</h2>
         <DataSummary summary={data.summary} />
@@ -54,17 +62,26 @@ export async function DashboardContent() {
         <DataTable data={data.data} />
       </Card>
 
+      <Card>
+        <h2 className="text-xl font-semibold mb-4">Visualization</h2>
+        <ChartSelector data={data.data} columns={columns} />
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {data.charts.map((chart, index) => (
-          <Card key={index}>
-            <h2 className="text-xl font-semibold mb-4">{chart.title}</h2>
-            {chart.type === 'line' ? (
-              <LineChart {...chart} />
-            ) : (
-              <BarChart {...chart} />
-            )}
-          </Card>
-        ))}
+        <Card>
+          <h2 className="text-xl font-semibold mb-4">Distribution Analysis</h2>
+          <ChartSelector 
+            data={data.data} 
+            columns={columns}
+          />
+        </Card>
+        <Card>
+          <h2 className="text-xl font-semibold mb-4">Correlation Analysis</h2>
+          <ChartSelector 
+            data={data.data}
+            columns={columns}
+          />
+        </Card>
       </div>
     </div>
   );
